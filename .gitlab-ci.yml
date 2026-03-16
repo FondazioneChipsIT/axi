@@ -12,9 +12,10 @@ before_script:
 vsim:
   stage: build
   script:
+    - echo "Running VSIM job with VSIM_VER='$VSIM_VER'"
     - export ARTIFACT="vsim-$VSIM_VER"
     - >
-        cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
+      cd build && ../scripts/compile_vsim.sh && mv work "work-$VSIM_VER"
   parallel:
     matrix:
       - VSIM_VER: ['2025.3']
