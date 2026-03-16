@@ -16,9 +16,10 @@ vsim:
     - export ARTIFACT="vsim-$VSIM_VER"
     - >
       cd build && ../scripts/compile_vsim.sh 
-  parallel:
-    matrix:
-      - VSIM_VER: ['2025.3']
+  artifacts:
+    paths:
+      - build/work
+    expire_in: 1h
 
 # synopsys_dc:
 #   stage: build
