@@ -14,10 +14,7 @@ vsim:
   script:
     - export ARTIFACT="vsim-$VSIM_VER"
     - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
         cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
-      fi
   parallel:
     matrix:
       - VSIM_VER: ['2025.3']
