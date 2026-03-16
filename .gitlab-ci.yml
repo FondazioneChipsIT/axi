@@ -55,9 +55,9 @@ vsim:
   script:
     - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
     - >
-        cd build
-        mv work{-$VSIM_VER,}
-        ../scripts/run_vsim.sh --random-seed $TEST_MODULE && touch $ARTIFACT.tested
+      cd build
+      mv work "work-$VSIM_VER"
+      ../scripts/run_vsim.sh --random-seed "$TEST_MODULE" && touch "$ARTIFACT.tested"
   parallel:
     matrix:
       - VSIM_VER: ['2025.3']
