@@ -16,7 +16,7 @@ jobs:
         # Skip on forks or pull requests from forks due to missing secrets.
         if: github.repository == 'pulp-platform/axi' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
-          domain: iis-git.ee.ethz.ch
+          domain: gitlab.chips.it
           repo: github-mirror/axi
           token: ${{ secrets.GITLAB_TOKEN }}
           poll-count: 1800
