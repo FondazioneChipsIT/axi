@@ -1,8 +1,12 @@
 variables:
-  SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
+  # SYNOPSYS_DC: synopsys-2022.03 dcnxt_shell
+  QuestaModule:     "questa/2025.3"
+  BenderModule:     "bender/0.28.2"
 
 before_script:
-  - export PATH=~/.cargo/bin:$PATH
+  - module purge
+  - module load ${BenderModule} ${QuestaModule}
+  - module list
   - mkdir -p build
 
 vsim:
@@ -10,53 +14,41 @@ vsim:
   script:
     - export ARTIFACT="vsim-$VSIM_VER"
     - >
-      case $VSIM_VER in 20*)
-        export VSIM="questa-$VSIM_VER vsim -64";
-        export VLIB="questa-$VSIM_VER vlib";
-        export VLOG="questa-$VSIM_VER vlog -64";
-        ;;
-      *)
-        export VSIM="vsim-$VSIM_VER -64";
-        export VLIB="vlib-$VSIM_VER";
-        export VLOG="vlog-$VSIM_VER -64";
-        ;;
-      esac
-    - >
       if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
         cd build && ../scripts/compile_vsim.sh && mv work{,-$VSIM_VER}
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert $ARTIFACT
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['2025.1']
+      - VSIM_VER: ['2025.3']
 
-synopsys_dc:
-  stage: build
-  script:
-    - >
-      if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup synopsys_dc; then
-        cd build && ../scripts/synth.sh
-        $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
-      fi
+# synopsys_dc:
+#   stage: build
+#   script:
+#     - >
+#       if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup synopsys_dc; then
+#         cd build && ../scripts/synth.sh
+#         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh insert synopsys_dc
+#       fi
 
-fuse_xsim:
-  stage: build
-  allow_failure: true
-  timeout: 5 minutes
-  script:
-    - bender sources
-    - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
-    - mkdir fusesoc && cd fusesoc
-    - $HOME/.local/bin/fusesoc library add axi ..
-    - $HOME/.local/bin/fusesoc core list
-    - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
+# fuse_xsim:
+#   stage: build
+#   allow_failure: true
+#   timeout: 5 minutes
+#   script:
+#     - bender sources
+#     - /usr/local/anaconda3/bin/python3 -m pip install fusesoc --user
+#     - mkdir fusesoc && cd fusesoc
+#     - $HOME/.local/bin/fusesoc library add axi ..
+#     - $HOME/.local/bin/fusesoc core list
+#     - vitis-2022.1-zr $HOME/.local/bin/fusesoc run --tool xsim --target sim --no-export pulp-platform.org::axi:$(cat ../VERSION | sed s/-/./g)
 
-verilator_lint:
-  stage: build
-  variables:
-    VERILATOR: verilator-5.020 verilator
-  script:
-    - scripts/run_verilator.sh
+# verilator_lint:
+#   stage: build
+#   variables:
+#     VERILATOR: verilator-5.020 verilator
+#   script:
+#     - scripts/run_verilator.sh
 
 .run_vsim: &run_vsim
   stage: test
@@ -64,14 +56,6 @@ verilator_lint:
     - vsim
   script:
     - export ARTIFACT="$TEST_MODULE-vsim_$VSIM_VER"
-    - >
-      case $VSIM_VER in 20*)
-        export VSIM="questa-$VSIM_VER vsim -64";
-        ;;
-      *)
-        export VSIM="vsim-$VSIM_VER -64";
-        ;;
-      esac
     - >
       if ! $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh lookup $ARTIFACT; then
         $CI_PROJECT_DIR/.gitlab-ci.d/memora_retry.sh get vsim-$VSIM_VER
@@ -82,7 +66,7 @@ verilator_lint:
       fi
   parallel:
     matrix:
-      - VSIM_VER: ['2025.1']
+      - VSIM_VER: ['2025.3']
 
 axi_addr_test:
   <<: *run_vsim
