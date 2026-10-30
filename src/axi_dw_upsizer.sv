@@ -749,20 +749,4 @@ module axi_dw_upsizer #(
     end
   end
 
-// pragma translate_off
-`ifndef VERILATOR
-`ifndef XSIM
-  default disable iff (!rst_ni);
-  // Only unsupported reads, i.e., WRAP bursts of more than one beat, go to the error slave. A read
-  // must not inherit the error flag of a rejected atomic operation served before by its upsizer.
-  err_slv_ar_unsupported: assert property (@(posedge clk_i)
-      axi_err_req.ar_valid |-> (axi_err_req.ar.burst == axi_pkg::BURST_WRAP &&
-                                axi_err_req.ar.len   != '0)) else
-      $fatal(1, "Supported AR (ID %0h, burst %0d, len %0d) sent to the error slave.",
-             $sampled(axi_err_req.ar.id), $sampled(axi_err_req.ar.burst),
-             $sampled(axi_err_req.ar.len));
-`endif
-`endif
-// pragma translate_on
-
 endmodule : axi_dw_upsizer

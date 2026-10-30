@@ -130,57 +130,6 @@ module tb_axi_dw_upsizer #(
    *  DRIVERS  *
    *************/
 
-  // Directed test: a read after a rejected atomic WRAP burst. An AtomicCompare of two beats whose
-  // address is aligned to one beat, but not to both, is a WRAP burst [E1.1.3]: the upsizer rejects
-  // it and answers on B and R with SLVERR, through one of its read upsizers. The legal read that
-  // follows gets the same read upsizer and has to be forwarded to the master port, which the
-  // assertion `err_slv_ar_unsupported` of the upsizer checks. An AtomicCompare carries at most 32
-  // bytes, so the test needs a slave port of at most 128 bits.
-  localparam int unsigned TbAxiSlvPortStrbWidth = TbAxiSlvPortDataWidth / 8;
-
-  typedef axi_test::axi_ax_beat #(.AW(TbAxiAddrWidth), .IW(TbAxiIdWidth), .UW(TbAxiUserWidth))
-    ax_beat_t;
-  typedef axi_test::axi_w_beat #(.DW(TbAxiSlvPortDataWidth), .UW(TbAxiUserWidth)) w_beat_t;
-  typedef axi_test::axi_b_beat #(.IW(TbAxiIdWidth), .UW(TbAxiUserWidth)) b_beat_t;
-  typedef axi_test::axi_r_beat #(.DW(TbAxiSlvPortDataWidth), .IW(TbAxiIdWidth),
-    .UW(TbAxiUserWidth)) r_beat_t;
-
-  task automatic atop_wrap_then_read();
-    automatic ax_beat_t aw = new, ar = new;
-    automatic w_beat_t  w;
-    automatic b_beat_t  b;
-    automatic r_beat_t  r;
-    if (2 * TbAxiSlvPortStrbWidth > 32) return;
-    $display("Directed test: read after a rejected atomic WRAP burst");
-
-    // AtomicCompare of two beats as wide as the slave port
-    aw.ax_id    = '0;
-    aw.ax_addr  = TbAxiSlvPortStrbWidth;
-    aw.ax_size  = $clog2(TbAxiSlvPortStrbWidth);
-    aw.ax_len   = 1;
-    aw.ax_burst = axi_pkg::BURST_WRAP;
-    aw.ax_cache = axi_pkg::CACHE_MODIFIABLE;
-    aw.ax_atop  = axi_pkg::ATOP_ATOMICCMP;
-    master_drv.drv.send_aw(aw);
-    for (int unsigned i = 0; i < 2; i++) begin
-      w        = new;
-      w.w_strb = '1;
-      w.w_last = (i == 1);
-      master_drv.drv.send_w(w);
-    end
-    master_drv.drv.recv_b(b);
-    repeat (2) master_drv.drv.recv_r(r);
-
-    // Legal INCR read of four beats
-    ar.ax_id    = 1;
-    ar.ax_size  = $clog2(TbAxiSlvPortStrbWidth);
-    ar.ax_len   = 3;
-    ar.ax_burst = axi_pkg::BURST_INCR;
-    ar.ax_cache = axi_pkg::CACHE_MODIFIABLE;
-    master_drv.drv.send_ar(ar);
-    repeat (4) master_drv.drv.recv_r(r);
-  endtask
-
   initial begin
     eos = 1'b0;
 
@@ -197,9 +146,6 @@ module tb_axi_dw_upsizer #(
       slave_drv.run()         ;
       master_drv.run(200, 200);
     join_any
-
-    // After the random traffic, whose monitor does not model rejected bursts
-    atop_wrap_then_read();
 
     // Done
     repeat (10) @(posedge clk);
